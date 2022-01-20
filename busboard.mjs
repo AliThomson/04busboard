@@ -1,11 +1,20 @@
 import readlineSync from "readline-sync";
-
-const busStopCode = readlineSync.question("Please input the stop code: ");
-console.log(busStopCode);
-
 import fetch from "node-fetch";
 
-fetch("https://api.tfl.gov.uk/StopPoint/" + busStopCode + "/Arrivals")
+const inpPostCode = readlineSync.question("Please input your post code: ");
+
+const pcResponse = await fetch("api.postcodes.io/postcodes/" + inpPostCode);
+const coords = await pcResponse.json();
+
+const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.latitude + "&lon=" + coords.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=500")
+const busStops = await bsResponse.json(); 
+
+
+//change url to use busStops.naptanID
+//change fetch  .then to await for arrivals api
+
+
+fetch("https://api.tfl.gov.uk/StopPoint/490008110N/Arrivals")
     .then(response => response.json())
     .then (json => {
         json.sort(function(a, b)
