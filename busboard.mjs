@@ -1,22 +1,22 @@
 import readlineSync from "readline-sync";
 import fetch from "node-fetch";
 
-const inpPostCode = readlineSync.question("Please input your post code: ");
+const inpPostCode = readlineSync.question("Please input your post code: ");inpPostCode
 
-const pcResponse = await fetch("api.postcodes.io/postcodes/" + inpPostCode);
+
+const pcResponse = await fetch("https://api.postcodes.io/postcodes/" + encodeURI(inpPostCode));
 const coords = await pcResponse.json();
 
 const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.latitude + "&lon=" + coords.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=500")
 const busStops = await bsResponse.json(); 
+console.log("Busstop ID = " + busStops.stopPoints[0].naptanId);
 
-
-//change url to use busStops.naptanID
 //change fetch  .then to await for arrivals api
 
 
-fetch("https://api.tfl.gov.uk/StopPoint/490008110N/Arrivals")
+fetch("https://api.tfl.gov.uk/StopPoint/" + busStops.stopPoints[0].naptanId + "/Arrivals")
     .then(response => response.json())
-    .then (json => {
+    .then(json => {
         json.sort(function(a, b)
         {
             return a.expectedArrival.substring(11,16).localeCompare(b.expectedArrival.substring(11,16));
