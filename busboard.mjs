@@ -1,20 +1,19 @@
-import readlineSync from "readline-sync";
+import fetch from 'node-fetch';
 
-const busStopCode = readlineSync.question("Please input the stop code: ");
-console.log(busStopCode);
+const response = await fetch("https://api.tfl.gov.uk/StopPoint/490008660N/Arrivals");
+const buses = await response.json();
 
-import fetch from "node-fetch";
 
-fetch("https://api.tfl.gov.uk/StopPoint/" + busStopCode + "/Arrivals")
-    .then(response => response.json())
-    .then (json => {
-        json.sort(function(a, b)
-        {
-            return a.expectedArrival.substring(11,16).localeCompare(b.expectedArrival.substring(11,16));
-        });
-        
-        for (const bus of json) {
-            console.log("Stop: " + bus.stationName);
-            console.log("Bus no. " + bus.lineName + " to " + bus.destinationName + " is arriving at " + bus.expectedArrival.substring(11,16));
-        }
-    })    
+
+const sortedBuses = buses.sort((bus1, bus2) => bus1.timeToStation - bus2.timeToStation);
+
+const last5buses = sortedBuses.slice(0,5)
+
+
+for(const bus of last5buses) {
+    
+    console.log("Bus to " + bus.destinationName + " arrving in " + bus.timeToStation + "seconds");
+ 
+}
+
+
