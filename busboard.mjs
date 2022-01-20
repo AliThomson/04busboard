@@ -15,8 +15,6 @@ fetch("https://api.tfl.gov.uk/StopPoint/" + busStopCode + "/Arrivals")
         
         for (const bus of json) {
             console.log("Stop: " + bus.stationName);
-            console.log("Route: " + bus.lineName);
-            console.log("Destination: " + bus.destinationName);
-            console.log("Arriving: " + bus.expectedArrival.substring(11,16));
+            console.log("Bus no. " + bus.lineName + " to " + bus.destinationName + " is arriving at " + bus.expectedArrival.substring(11,16));
         }
     })    
