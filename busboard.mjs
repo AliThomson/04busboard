@@ -2,7 +2,6 @@ import fetch from "node-fetch";
 
 fetch("https://api.tfl.gov.uk/StopPoint/490008660N/Arrivals")
     .then(response => response.json())
-    //.then(body => console.log(body))
     .then(json => {
         for (const dis of json) {
             console.log("Stop: " + dis.stationName);
