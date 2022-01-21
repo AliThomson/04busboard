@@ -26,45 +26,48 @@ while (isValidPostcode(inpPostCode) === false) {
 const pcResponse = await fetch("https://api.postcodes.io/postcodes/" + encodeURI(inpPostCode));
 const coords = await pcResponse.json();
 //console.log("coords = " + coords.result.latitude);
-let busStopRadius = 500;
 
+let busStopRadius = 500;
 let numberOfStops = 0;
+let busStops = {};
+
 while (numberOfStops === 0) {
     try {
         const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.result.latitude + "&lon=" + coords.result.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=" + busStopRadius)
-        const busStops = await bsResponse.json(); 
+        busStops = await bsResponse.json(); 
 
-        numberOfStops = busStops.stopPoints.length
-        console.log(busStops.stopPoints.length);
-        if(busStops.stopPoints.length < 2) {
-            throw "Your search did not return 2 bus stops.";
+        numberOfStops = busStops.stopPoints.length;
+        //console.log(numberOfStops);
+        if(numberOfStops < 2) {
+            throw "Your search returned less than 2 bus stops.";
         }
     }
     catch (err) {
         numberOfStops = 0;
-        busStopRadius = 1000;
-        console.log("We are searchin wider area.");
+        busStopRadius = busStopRadius + 500;
+        if (busStopRadius > 4000) {
+            console.error("Sorry, your postcode did not return any buses");
+        } else {
+            console.log(err);
+        }
 
     }
 }
 
-
 const firstTwoStops = busStops.stopPoints.slice(0,2);
-//console.log("Busstops = " + busStops.stopPoints[0].naptanId);
-// console.log(firstTwoStops)
 
 for (let i=0; i<=1; i++) {
+
     let arrivalsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/" + firstTwoStops[i].naptanId + "/Arrivals");
     let arrivals = await arrivalsResponse.json();
+    console.log("Stop = " + arrivals[0].stationName);
         
     arrivals.sort(function(a, b) {
             return a.expectedArrival.substring(11,16).localeCompare(b.expectedArrival.substring(11,16));
         });
 
-    const firstFiveArrivals = arrivals.slice(0,5);
-        
+    let firstFiveArrivals = arrivals.slice(0,5);
     for (let bus of firstFiveArrivals) {
-        console.log("Stop: " + bus.stationName);
         console.log("Bus no. " + bus.lineName + " to " + bus.destinationName + " is arriving at " + bus.expectedArrival.substring(11,16));
     }
 }
