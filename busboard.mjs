@@ -27,23 +27,24 @@ const pcResponse = await fetch("https://api.postcodes.io/postcodes/" + encodeURI
 const coords = await pcResponse.json();
 //console.log("coords = " + coords.result.latitude);
 
-const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.result.latitude + "&lon=" + coords.result.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=1900")
+const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.result.latitude + "&lon=" + coords.result.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=500")
 const busStops = await bsResponse.json(); 
 
-busStops.stopPoints.slice(0,2);
+const firstTwoStops = busStops.stopPoints.slice(0,2);
 //console.log("Busstops = " + busStops.stopPoints[0].naptanId);
+// console.log(firstTwoStops)
 
-for (let i=0; i<=2; i++) {
-    let arrivalsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/" + busStops.stopPoints[i].naptanId + "/Arrivals");
+for (let i=0; i<=1; i++) {
+    let arrivalsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/" + firstTwoStops[i].naptanId + "/Arrivals");
     let arrivals = await arrivalsResponse.json();
         
     arrivals.sort(function(a, b) {
             return a.expectedArrival.substring(11,16).localeCompare(b.expectedArrival.substring(11,16));
         });
 
-    arrivals.slice(0,5);
+    const firstFiveArrivals = arrivals.slice(0,5);
         
-    for (let bus of arrivals) {
+    for (let bus of firstFiveArrivals) {
         console.log("Stop: " + bus.stationName);
         console.log("Bus no. " + bus.lineName + " to " + bus.destinationName + " is arriving at " + bus.expectedArrival.substring(11,16));
     }
