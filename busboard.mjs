@@ -6,10 +6,12 @@ const inpPostCode = readlineSync.question("Please input your post code: ");inpPo
 
 const pcResponse = await fetch("https://api.postcodes.io/postcodes/" + encodeURI(inpPostCode));
 const coords = await pcResponse.json();
+//console.log("coords = " + coords.result.latitude);
 
-const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.latitude + "&lon=" + coords.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=500")
+const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.result.latitude + "&lon=" + coords.result.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=500")
 const busStops = await bsResponse.json(); 
-console.log("Busstop ID = " + busStops.stopPoints[0].naptanId);
+//console.log("Busstops = " + busStops.stopPoints[0].naptanId);
+//console.log("Busstop ID = " + busStops.keys.stopPoints[0].naptanId);
 
 //change fetch  .then to await for arrivals api
 
