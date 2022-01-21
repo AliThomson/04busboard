@@ -26,9 +26,28 @@ while (isValidPostcode(inpPostCode) === false) {
 const pcResponse = await fetch("https://api.postcodes.io/postcodes/" + encodeURI(inpPostCode));
 const coords = await pcResponse.json();
 //console.log("coords = " + coords.result.latitude);
+let busStopRadius = 500;
 
-const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.result.latitude + "&lon=" + coords.result.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=500")
-const busStops = await bsResponse.json(); 
+let numberOfStops = 0;
+while (numberOfStops === 0) {
+    try {
+        const bsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/?lat=" + coords.result.latitude + "&lon=" + coords.result.longitude + "&stopTypes=NaptanPublicBusCoachTram&radius=" + busStopRadius)
+        const busStops = await bsResponse.json(); 
+
+        numberOfStops = busStops.stopPoints.length
+        console.log(busStops.stopPoints.length);
+        if(busStops.stopPoints.length < 2) {
+            throw "Your search did not return 2 bus stops.";
+        }
+    }
+    catch (err) {
+        numberOfStops = 0;
+        busStopRadius = 1000;
+        console.log("We are searchin wider area.");
+
+    }
+}
+
 
 const firstTwoStops = busStops.stopPoints.slice(0,2);
 //console.log("Busstops = " + busStops.stopPoints[0].naptanId);
