@@ -1,6 +1,12 @@
 import readlineSync from "readline-sync";
 import fetch from "node-fetch";
 import winston from "winston";
+const logger = winston.createLogger({
+      transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: 'combined.log' })
+      ]
+    });
 
 function isValidPostcode(inputPC) { 
     let postcodeRegEx = /[A-Z]{1,2}[0-9]{1,2} ?[0-9][A-Z]{2}/i; 
@@ -18,7 +24,7 @@ while (isValidPostcode(inpPostCode) === false) {
     }
     catch (err) {
         inpPostCode = "";
-        console.log("Postcode is invalid - please try again");
+        logger.error("Postcode is invalid - please try again");
 
     }
 }
@@ -36,7 +42,7 @@ while (numberOfStops === 0) {
         busStops = await bsResponse.json(); 
 
         numberOfStops = busStops.stopPoints.length;
-        //console.log(numberOfStops);
+        
         if(numberOfStops < 2) {
             throw "Your search returned less than 2 bus stops. Widening search area...";
         }
@@ -45,9 +51,9 @@ while (numberOfStops === 0) {
         numberOfStops = 0;
         busStopRadius = busStopRadius + 500;
         if (busStopRadius > 4000) {
-            console.error("Sorry, your postcode did not return any buses");
+            logger.error("Sorry, your postcode did not return any buses");
         } else {
-            console.log(err);
+            logger.info(err);
         }
 
     }
@@ -78,7 +84,6 @@ for (let i=0; i<=1; i++) {
         }
     }
     catch (err) {
-        console.log(err);
+        logger.error(err);
     }
-
 }
