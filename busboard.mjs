@@ -25,7 +25,6 @@ while (isValidPostcode(inpPostCode) === false) {
 
 const pcResponse = await fetch("https://api.postcodes.io/postcodes/" + encodeURI(inpPostCode));
 const coords = await pcResponse.json();
-//console.log("coords = " + coords.result.latitude);
 
 let busStopRadius = 500;
 let numberOfStops = 0;
@@ -39,7 +38,7 @@ while (numberOfStops === 0) {
         numberOfStops = busStops.stopPoints.length;
         //console.log(numberOfStops);
         if(numberOfStops < 2) {
-            throw "Your search returned less than 2 bus stops.";
+            throw "Your search returned less than 2 bus stops. Widening search area...";
         }
     }
     catch (err) {
@@ -60,14 +59,26 @@ for (let i=0; i<=1; i++) {
 
     let arrivalsResponse = await fetch("https://api.tfl.gov.uk/StopPoint/" + firstTwoStops[i].naptanId + "/Arrivals");
     let arrivals = await arrivalsResponse.json();
-    console.log("Stop = " + arrivals[0].stationName);
-        
-    arrivals.sort(function(a, b) {
-            return a.expectedArrival.substring(11,16).localeCompare(b.expectedArrival.substring(11,16));
-        });
 
-    let firstFiveArrivals = arrivals.slice(0,5);
-    for (let bus of firstFiveArrivals) {
-        console.log("Bus no. " + bus.lineName + " to " + bus.destinationName + " is arriving at " + bus.expectedArrival.substring(11,16));
+    console.log("Stop = " + firstTwoStops[i].commonName);
+    
+    try {
+        if (arrivals != "") {
+                    
+            arrivals.sort(function(a, b) {
+                    return a.expectedArrival.substring(11,16).localeCompare(b.expectedArrival.substring(11,16));
+                });
+
+            let firstFiveArrivals = arrivals.slice(0,5);
+            for (let bus of firstFiveArrivals) {
+                console.log("Bus no. " + bus.lineName + " to " + bus.destinationName + " is arriving at " + bus.expectedArrival.substring(11,16));
+            }
+        } else {
+            throw "Sorry, no buses scheduled to arrive";
+        }
     }
+    catch (err) {
+        console.log(err);
+    }
+
 }
