@@ -1,67 +1,97 @@
 import fetch from 'node-fetch';
-import readlineSync from 'readline-sync';
-import winston from 'winston'
-
-function isValidPostcode(p) { 
-    let postcodeRegEx = /[A-Z]{1,2}[0-9]{1,2} ?[0-9][A-Z]{2}/i; 
-    return postcodeRegEx.test(p); 
-}
-console.log(isValidPostcode("nw51tl"))
-
-// while(isValidPostcode(p) === false) {
-//     try {
-//         throw new Error ("Invalid Postcode. Please try again!")
-//     }
-//     catch(err) {
-//         console.error("Invalid Postcode. Please try again!")
-//     }
-// }
-
-let userPostcode = "";
-
-const askPostcode = () => {
-    userPostcode = readlineSync.question("Please enter your post code: ")
-    
-}
-askPostcode();
+import prompt from 'prompt-sync';
 
 
+const isValidPostcode = (inputPostcode) => {
+  let postcodeRegEx = /[A-Z]{1,2}[0-9]{1,2} ?[0-9][A-Z]{2}/i;
+  return postcodeRegEx.test(inputPostcode);
+};
 
-
-const responsePostcode = await fetch(`https://api.postcodes.io/postcodes/${userPostcode}`);
-const postCodeResponse = await responsePostcode.json();
-
-
-const longitude = postCodeResponse.result.longitude;
-const latitude = postCodeResponse.result.latitude;
-
-
-
-const responseRadius = await fetch(`https://api.tfl.gov.uk/StopPoint/?lat=${latitude}&lon=${longitude}&stopTypes=NaptanPublicBusCoachTram&radius=1000`);
-const busStops = await responseRadius.json();
-
-const firstTwoStop = busStops.stopPoints.slice(0, 2)
-
-
-for (let stop of firstTwoStop) {
-
-
-    const response = await fetch(`https://api.tfl.gov.uk/StopPoint/${stop.naptanId}/Arrivals`);
-    const buses = await response.json();
-    
-    
-
-   const sortedBuses = buses.sort((bus1, bus2) => bus1.timeToStation - bus2.timeToStation);
-
-    const last5buses = sortedBuses.slice(0,5)
-
-    
-     for(const bus of last5buses) {
-
-    console.log(`[${bus.stationName}]: Bus to ${bus.destinationName} arrving in ${bus.timeToStation} seconds`);
- 
-     }
-
+// GET POSTCODE
+let postcode = '';
+while (isValidPostcode(postcode) === false) {
+  try {
+    postcode = prompt()(`What is your postcode? `);
+    if (isValidPostcode(postcode) === false) {
+      throw "It's not a valid postcode.";
+    }
+  } catch (error) {
+    console.log(error);
+  }
 }
 
+// GET POSTCODE INFO
+const postcodeInfo = await fetch(
+  `https://api.postcodes.io/postcodes/${postcode}`
+);
+const postcodeResult = await postcodeInfo.json();
 
+const longitude = postcodeResult.result.longitude;
+const latitude = postcodeResult.result.latitude;
+
+// GET BUSSTOP INFO
+
+let radius = 200;
+let busStopsResult = {};
+let busStopPoints = 0;
+let nearestTwoBusStops = [];
+
+while (busStopPoints === 0) {
+  try {
+    const busStopsInfo = await fetch(
+      `https://api.tfl.gov.uk/StopPoint/?lat=${latitude}&lon=${longitude}&stopTypes=NaptanPublicBusCoachTram&radius=${radius}`
+    );
+    busStopsResult = await busStopsInfo.json();
+
+    if (busStopsResult.stopPoints.length) {
+      busStopPoints = busStopsResult.stopPoints.length;
+    }
+    if (busStopPoints === 0) {
+      throw 'There are no bus stops nearby.';
+    } else {
+      const nearestBusStops = busStopsResult.stopPoints.sort(
+        (busStopFirst, busStopSecond) => {
+          return busStopFirst.distance - busStopSecond.distance;
+        }
+      );
+
+      nearestTwoBusStops = nearestBusStops.slice(0, 2);
+    }
+  } catch (error) {
+    busStopPoints = 0;
+    console.log(error);
+    console.log('Area expanding...');
+    radius += 100;
+    if (radius > 1500) {
+      console.log('No available bus stops.');
+      break;
+    }
+  }
+}
+// GET BUSSES FROM BUSSTOP INFO
+for (let busStop of nearestTwoBusStops) {
+  const getBusStopInformation = await fetch(
+    `https://api.tfl.gov.uk/StopPoint/${busStop.naptanId}/Arrivals?StopType=NaptanPublicBusCoachTram&?app_key=f917a2c79ce74c30a426763cba9490f6`
+  );
+  const comingBuses = await getBusStopInformation.json();
+  console.log(`${busStop.indicator}`);
+  try {
+    if (comingBuses.length === 0) {
+      throw 'There are no busses coming to this bus stop.';
+    } else {
+      const nearestBuses = comingBuses.sort((firstBus, secondBus) => {
+        return firstBus.timeToStation - secondBus.timeToStation;
+      });
+
+      const nearestFiveBuses = nearestBuses.slice(0, 5);
+
+      for (let bus of nearestFiveBuses) {
+        console.log(
+          `Bus to ${bus.destinationName} towards ${bus.towards} in ${bus.timeToStation} seconds`
+        );
+      }
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
