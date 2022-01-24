@@ -1,1 +1,0 @@
-https://api.tfl.gov.uk/StopPoint/?lat=51.506&lon=-0.325&stopTypes=NaptanPublicBusCoachTram&radius=500
